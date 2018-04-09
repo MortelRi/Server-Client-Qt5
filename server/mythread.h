@@ -4,9 +4,7 @@
 #include <QThread>
 #include <QTcpSocket>
 #include <QDebug>
-#include <string>
 #include <algorithm>
-#include <sstream>
 
 class MyThread : public QThread
 {

@@ -29,83 +29,41 @@ void MyThread::readyRead()
     QByteArray Data = socket->readAll();
     int index = Data.back() - '0';
     Data.chop(1);
-    std::string text = Data.toStdString();
-    qDebug() << socketDescriptor << " Data in: " << text.c_str();
+    QString text = QString::fromUtf8(Data);
+    qDebug() << socketDescriptor << " Data in: " << text;
 
     switch (index)
     {
     case 0:     //сортировка символов текста по убыванию
-        std::sort(text.begin(), text.end(), std::greater<char>());
-        qDebug() << socketDescriptor << " Data out: " << text.c_str();
-        socket->write(text.c_str());
+        std::sort(text.begin(), text.end(), std::greater<QString>());
+        qDebug() << socketDescriptor << " Data out: " << text;
+        socket->write(text.toUtf8());
         break;
     case 1:     //Разворот текста
         std::reverse(text.begin(), text.end());
-        qDebug() << socketDescriptor << " Data out: " << text.c_str();
-        socket->write(text.c_str());
+        qDebug() << socketDescriptor << " Data out: " << text;
+        socket->write(text.toUtf8());
         break;
     case 2:     //Сортировка строк текста по возрастанию
     {
-        std::size_t found;
-        std::vector<std::string> vecText;
-
-        for(unsigned int i = 0; i < text.size(); i++)
-        {
-            found = text.find("\n", i);
-            if (found != std::string::npos){
-                vecText.push_back(text.substr(i, found - i));
-                i = found;
-            }
-            else{
-                vecText.push_back(text.substr(i, text.back() - i));
-                break;
-            }
-        }
-        text.clear();
-        std::sort(vecText.begin(), vecText.end());
-
-        for(auto it = vecText.begin(); it != vecText.end(); it++){
-            text.append(*it);
-            if (it+1 != vecText.end())
-                text.push_back('\n');
-        }
-
-        qDebug() << socketDescriptor << " Data out: " << text.c_str();
-        socket->write(text.c_str());
+        QStringList list = text.split("\n", QString::SkipEmptyParts);
+        std::sort(list.begin(), list.end());
+        text = list.join("\n");
+        qDebug() << socketDescriptor << " Data out: " << text;
+        socket->write(text.toUtf8());
         break;
     }
     case 3:     //Статистика по используемым символам в тексте
-        std::vector<char> vecText;
-        std::ostringstream ss;
-        std::string s;
-
-        for(auto ch = text.begin(); ch != text.end(); ch++)
-        {
-            bool comp = true;
-            if(!vecText.empty())
-            {
-                for(auto it = vecText.begin(); it != vecText.end(); it++)
-                {
-                    if (*it == *ch)
-                    {
-                        comp = false;
-                        break;
-                    }
-                }
-            }
-            if (comp)
-            {
-                vecText.push_back(*ch);
-                ss << std::count(text.begin(), text.end(), *ch) << " " << *ch;
-                if (ch + 1 != text.end())
-                    ss << std::endl;
-                s += ss.str();
-                ss.str("");
-            }
+        QMap<QString, int> map;
+        for(auto it = text.begin(); it != text.end(); it++)
+            map[*it] = std::count(text.begin(), text.end(), *it);
+        QMapIterator<QString, int> i(map);
+        text.clear();
+        while (i.hasNext()) {
+            i.next();
+            text += QString("%1 %2\n").arg(i.value()).arg(i.key());
         }
-
-        qDebug() << socketDescriptor << " Data out: " << s.c_str();
-        socket->write(s.c_str());
+        socket->write(text.toUtf8());
         break;
     }
 
