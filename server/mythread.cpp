@@ -62,7 +62,6 @@ void MyThread::readyRead()
         break;
     }
     case 3:     //Статистика по используемым символам в тексте
-    {
         QMap<QString, int> map;
 
         std::sort(text.begin(), text.end());
@@ -76,10 +75,6 @@ void MyThread::readyRead()
             text += QString("%1 %2").arg(i.value()).arg(i.key());
             if (i.hasNext()) text += QString("\n");
         }
-        break;
-    }
-    default:
-        text = "ERROR!";
         break;
     }
 
