@@ -26,35 +26,43 @@ void MyThread::run()
 
 void MyThread::readyRead()
 {
-    QByteArray Data = socket->readAll();
+    QString text;
+    int index = -1;
+    quint16 blockSize = 0;
+    QByteArray block;
+    QDataStream in(socket), out(&block, QIODevice::WriteOnly);
 
-    int index = Data.back() - '0';
-    Data.chop(1);
-    QString text = QString::fromUtf8(Data);
+    while(true) {
+        if (blockSize == 0) {
+            if (socket->bytesAvailable() < sizeof(quint16)) break;
+            in >> blockSize;
+        }
+
+        if (socket->bytesAvailable() < blockSize) break;
+
+        in >> text;
+        in >> index;
+        blockSize = 0;
+    }
     qDebug() << socketDescriptor << " Data in: " << text.toStdString().c_str();
 
     switch (index)
     {
     case 0:     //сортировка символов текста по убыванию
         std::sort(text.begin(), text.end(), std::greater<QString>());
-        qDebug() << socketDescriptor << " Data out: " << text.toStdString().c_str();
-        socket->write(text.toUtf8());
         break;
     case 1:     //Разворот текста
         std::reverse(text.begin(), text.end());
-        qDebug() << socketDescriptor << " Data out: " << text.toStdString().c_str();
-        socket->write(text.toUtf8());
         break;
     case 2:     //Сортировка строк текста по возрастанию
     {
         QStringList list = text.split("\n", QString::SkipEmptyParts);
         std::sort(list.begin(), list.end());
         text = list.join("\n");
-        qDebug() << socketDescriptor << " Data out: " << text.toStdString().c_str();
-        socket->write(text.toUtf8());
         break;
     }
     case 3:     //Статистика по используемым символам в тексте
+    {
         QMap<QString, int> map;
 
         std::sort(text.begin(), text.end());
@@ -65,13 +73,21 @@ void MyThread::readyRead()
         text.clear();
         while (i.hasNext()) {
             i.next();
-            text += QString("%1 %2\n").arg(i.value()).arg(i.key());
+            text += QString("%1 %2").arg(i.value()).arg(i.key());
+            if (i.hasNext()) text += QString("\n");
         }
-        qDebug() << socketDescriptor << " Data out: " << text.toStdString().c_str();
-        socket->write(text.toUtf8());
+        break;
+    }
+    default:
+        text = "ERROR!";
         break;
     }
 
+    qDebug() << socketDescriptor << " Data out: " << text.toStdString().c_str();
+    out << quint16(0) << text;
+    out.device()->seek(0);
+    out << (quint16)(block.size() - sizeof(quint16));
+    socket->write(block);
 }
 
 void MyThread::disconnected()

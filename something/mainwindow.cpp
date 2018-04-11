@@ -46,6 +46,6 @@ void MainWindow::on_send_clicked()
 {
     if (connectedState)
     {
-        ui->output->setPlainText(socket->doThing(ui->input->toPlainText().toUtf8(), QString::number(ui->comboBox->currentIndex()).toUtf8()));
+        ui->output->setPlainText(socket->doThing(ui->input->toPlainText(), ui->comboBox->currentIndex()));
     }
 }

@@ -4,6 +4,7 @@
 #include <QObject>
 #include <QTcpSocket>
 #include <QDebug>
+#include <QDataStream>
 
 class TcpSocket : public QObject
 {
@@ -13,7 +14,7 @@ public:
     ~TcpSocket();
     bool doConnect(QString ip, QString port);
     void doDisconnect();
-    QString doThing(const char *text, const char *index);
+    QString doThing(QString text, int index);
 
 private:
     QTcpSocket *socket;

@@ -4,6 +4,7 @@
 #include <QThread>
 #include <QTcpSocket>
 #include <QDebug>
+#include <QDataStream>
 #include <algorithm>
 
 class MyThread : public QThread
