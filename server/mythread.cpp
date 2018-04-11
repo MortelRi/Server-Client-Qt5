@@ -27,21 +27,22 @@ void MyThread::run()
 void MyThread::readyRead()
 {
     QByteArray Data = socket->readAll();
+
     int index = Data.back() - '0';
     Data.chop(1);
     QString text = QString::fromUtf8(Data);
-    qDebug() << socketDescriptor << " Data in: " << text;
+    qDebug() << socketDescriptor << " Data in: " << text.toStdString().c_str();
 
     switch (index)
     {
     case 0:     //сортировка символов текста по убыванию
         std::sort(text.begin(), text.end(), std::greater<QString>());
-        qDebug() << socketDescriptor << " Data out: " << text;
+        qDebug() << socketDescriptor << " Data out: " << text.toStdString().c_str();
         socket->write(text.toUtf8());
         break;
     case 1:     //Разворот текста
         std::reverse(text.begin(), text.end());
-        qDebug() << socketDescriptor << " Data out: " << text;
+        qDebug() << socketDescriptor << " Data out: " << text.toStdString().c_str();
         socket->write(text.toUtf8());
         break;
     case 2:     //Сортировка строк текста по возрастанию
@@ -49,20 +50,24 @@ void MyThread::readyRead()
         QStringList list = text.split("\n", QString::SkipEmptyParts);
         std::sort(list.begin(), list.end());
         text = list.join("\n");
-        qDebug() << socketDescriptor << " Data out: " << text;
+        qDebug() << socketDescriptor << " Data out: " << text.toStdString().c_str();
         socket->write(text.toUtf8());
         break;
     }
     case 3:     //Статистика по используемым символам в тексте
         QMap<QString, int> map;
-        for(auto it = text.begin(); it != text.end(); it++)
-            map[*it] = std::count(text.begin(), text.end(), *it);
+
+        std::sort(text.begin(), text.end());
+        for(auto it = text.begin(); it != text.end(); it = std::upper_bound(text.begin(), text.end(), *it))
+            map[*it] = std::upper_bound(text.begin(), text.end(), *it) - std::lower_bound(text.begin(), text.end(), *it);
+
         QMapIterator<QString, int> i(map);
         text.clear();
         while (i.hasNext()) {
             i.next();
             text += QString("%1 %2\n").arg(i.value()).arg(i.key());
         }
+        qDebug() << socketDescriptor << " Data out: " << text.toStdString().c_str();
         socket->write(text.toUtf8());
         break;
     }
