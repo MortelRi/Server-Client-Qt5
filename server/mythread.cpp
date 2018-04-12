@@ -1,4 +1,5 @@
 #include "mythread.h"
+//#include <chrono>
 
 MyThread::MyThread(int ID, QObject *parent) :
     QThread(parent)
@@ -64,9 +65,14 @@ void MyThread::readyRead()
     case 3:     //Статистика по используемым символам в тексте
         QMap<QString, int> map;
 
-        std::sort(text.begin(), text.end());
-        for(auto it = text.begin(); it != text.end(); it = std::upper_bound(text.begin(), text.end(), *it))
-            map[*it] = std::upper_bound(text.begin(), text.end(), *it) - std::lower_bound(text.begin(), text.end(), *it);
+//        auto start = std::chrono::high_resolution_clock::now();
+
+        for (auto it = text.begin(); it != text.end(); ++it)
+            ++map[*it];
+
+//        auto finish = std::chrono::high_resolution_clock::now();
+//        std::chrono::duration<double> elapsed = finish - start;
+//        qDebug() << elapsed.count();
 
         QMapIterator<QString, int> i(map);
         text.clear();
